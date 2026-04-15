@@ -1,0 +1,4 @@
+base linux linux-firmware intel-ucode amd-ucode
+networkmanager iwd sudo curl rsync arch-install-scripts
+electron picom feh rofi xfce4-terminal xorg-server xorg-xinit
+outlaw-shell steam opera-gx ollama apparmor firejail
