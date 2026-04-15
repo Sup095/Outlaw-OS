@@ -1,0 +1,22 @@
+{
+  "name": "outlaw-os",
+  "version": "1.0.0",
+  "description": "Outlaw OS v1.0 - Retro Terminal Linux Desktop",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "dependencies": {
+    "electron": "^31.0.0"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.outlaw.os",
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "System"
+    }
+  }
+}
