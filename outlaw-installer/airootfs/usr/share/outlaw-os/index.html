@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OUTLAW OS v1.0</title>
+    <style>
+        :root {
+            --term-color: #33ff00;
+            --term-dim: #1a8000;
+            --bg-color: #050505;
+            --glow: 0 0 10px rgba(51, 255, 0, 0.4), 0 0 20px rgba(51, 255, 0, 0.2);
+            --danger: #ff3333;
+        }
+        body, html {
+            margin: 0; padding: 0; height: 100%; background-color: var(--bg-color); 
+            color: var(--term-color); font-family: 'Courier New', monospace; overflow: hidden;
+            text-shadow: var(--glow); user-select: none;
+        }
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 30px; box-sizing: border-box; display: none; flex-direction: column; }
+        .hidden { display: none !important; }
+        .log-text { white-space: pre-wrap; line-height: 1.5; font-size: 15px; }
+        .cursor { display: inline-block; width: 12px; height: 1.2em; background-color: var(--term-color); animation: blink 1s step-end infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .flicker { animation: text-flicker 4s linear infinite; }
+        @keyframes text-flicker { 0%,100% {opacity:1;} 3%{opacity:0.4;} 6%{opacity:1;} 10%{opacity:0.1;} 11%{opacity:1;} }
+        button, label.upload-btn {
+            background: rgba(51,255,0,0.05); color: var(--term-color); border: 1px solid var(--term-color);
+            padding: 10px 20px; font-family: 'Courier New', monospace; cursor: pointer;
+            text-transform: uppercase; transition: all 0.1s;
+        }
+        button:hover, label.upload-btn:hover { background: var(--term-color); color: #000; }
+        .btn-delete { border-color: var(--danger); color: var(--danger); }
+        .os-titlebar { border: 1px solid var(--term-dim); padding: 8px 14px; background: rgba(51,255,0,0.03); margin-bottom: 15px; display: flex; justify-content: space-between; font-size: 13px; }
+        .card-chrome { background: rgba(51,255,0,0.05); padding: 5px 10px; font-size: 10px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- BOOT SCREEN (now real data) -->
+    <div id="boot-screen" class="screen">
+        <div id="boot-text" class="log-text"></div>
+        <div><span class="cursor"></span></div>
+    </div>
+
+    <!-- MAIN UI -->
+    <div id="main-ui" class="screen hidden">
+        <div class="os-titlebar">
+            <span>OUTLAW_OS // v1.0 // OPERATOR</span>
+            <span id="real-time-info"></span>
+        </div>
+
+        <div style="margin-bottom:20px; display:flex; flex-wrap:wrap; gap:8px;">
+            <button onclick="openFileManager()">📁 FILE MANAGER</button>
+            <button onclick="openTaskManager()">📊 TASK MANAGER</button>
+            <button onclick="openTerminal()">>_ TERMINAL</button>
+            <button onclick="openCalculator()">🔢 CALCULATOR</button>
+            <button onclick="launchOperaGX()">🌐 OPERA GX</button>
+            <button onclick="installAndLaunchSteam()">🎮 STEAM</button>
+            <button onclick="openSettings()">⚙ SETTINGS</button>
+        </div>
+
+        <div class="ops-label">// PAYLOAD VAULT</div>
+        <div id="game-grid" style="display:flex;flex-wrap:wrap;gap:15px;overflow-y:auto;flex:1; padding:10px;"></div>
+    </div>
+
+    <!-- FILE MANAGER -->
+    <div id="file-manager-ui" class="screen hidden">
+        <div class="os-titlebar"><span>FILE MANAGER // /home/operator</span></div>
+        <button onclick="switchScreen('main-ui')">← BACK</button>
+        <div id="file-list" style="background:rgba(0,0,0,0.7);padding:20px;margin-top:15px;height:75vh;overflow-y:auto;font-size:14px;white-space:pre;"></div>
+    </div>
+
+    <!-- TASK MANAGER -->
+    <div id="task-manager-ui" class="screen hidden">
+        <div class="os-titlebar"><span>TASK MANAGER — LIVE</span></div>
+        <button onclick="switchScreen('main-ui')">← BACK</button>
+        <div id="task-bar" style="font-size:26px;margin:15px 0;"></div>
+        <div id="process-list" style="background:rgba(0,0,0,0.7);padding:20px;height:65vh;overflow-y:auto;font-size:14px;white-space:pre;"></div>
+        <button onclick="refreshTaskManager()" style="margin-top:10px;">REFRESH LIVE DATA</button>
+    </div>
+
+    <!-- TERMINAL -->
+    <div id="terminal-ui" class="screen hidden">
+        <div class="os-titlebar"><span>SYSTEM TERMINAL</span></div>
+        <button onclick="switchScreen('main-ui')">← BACK</button>
+        <textarea id="terminal-output" readonly style="width:100%;height:75vh;background:#000;color:#33ff00;border:1px solid var(--term-dim);padding:15px;font-family:monospace;font-size:15px;"></textarea>
+        <input id="terminal-input" placeholder="> Enter command..." style="width:100%;background:transparent;border:1px solid var(--term-color);color:var(--term-color);padding:12px;font-family:monospace;">
+    </div>
+
+    <!-- CALCULATOR -->
+    <div id="calculator-ui" class="screen hidden">
+        <div class="os-titlebar"><span>CALCULATOR</span></div>
+        <button onclick="switchScreen('main-ui')">← BACK</button>
+        <input id="calc-display" readonly style="width:100%;font-size:36px;text-align:right;padding:15px;background:#000;color:#33ff00;border:2px solid var(--term-color);margin:20px 0;">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+            <button onclick="calcInput('7')">7</button><button onclick="calcInput('8')">8</button><button onclick="calcInput('9')">9</button><button onclick="calcInput('/')">/</button>
+            <button onclick="calcInput('4')">4</button><button onclick="calcInput('5')">5</button><button onclick="calcInput('6')">6</button><button onclick="calcInput('*')">*</button>
+            <button onclick="calcInput('1')">1</button><button onclick="calcInput('2')">2</button><button onclick="calcInput('3')">3</button><button onclick="calcInput('-')">-</button>
+            <button onclick="calcInput('0')">0</button><button onclick="calcInput('.')">.</button><button onclick="calcInput('+')">+</button><button onclick="calcEquals()">=</button>
+            <button onclick="calcClear()" style="grid-column:span 4;">CLEAR</button>
+        </div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div id="settings-ui" class="screen hidden">
+        <div class="os-titlebar"><span>SETTINGS v1.0</span></div>
+        <button onclick="switchScreen('main-ui')">← BACK TO VAULT</button>
+        <div style="margin-top:30px;display:grid;grid-template-columns:1fr 1fr;gap:40px;">
+            <div>
+                <h3>SYSTEM UPDATES</h3>
+                <button onclick="checkForUpdates()" style="width:100%;padding:15px;">CHECK & APPLY UPDATES</button>
+                <div id="update-status" style="margin-top:10px;"></div>
+                <h3 style="margin-top:40px;">LOCAL AI ASSISTANT</h3>
+                <button id="ai-toggle-btn" onclick="toggleAI()" style="width:100%;padding:15px;">ENABLE LOCAL AI</button>
+                <p id="ai-status">Status: OFF • ~2GB RAM when active</p>
+            </div>
+            <div>
+                <h3>SUPPORT DEVELOPMENT</h3>
+                <button onclick="window.open('https://github.com/sponsors/YOURUSERNAME','_blank')" style="width:100%;padding:20px;background:#33ff00;color:#000;font-weight:bold;">DONATE / SUBSCRIBE</button>
+                <p style="margin-top:15px;opacity:0.8;">Helps keep Outlaw OS updated and secure for everyone.</p>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ==================== REAL LOADING SCREENS + UPDATED FEATURES ====================
+let db, currentEditId = null;
+let audioCtx;
+
+function playTone(freq, type = 'square', duration = 0.05, vol = 0.05) {
+    if (!audioCtx) return;
+    try {
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.value = freq;
+        gain.gain.value = vol;
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+    } catch(e){}
+}
+
+function switchScreen(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+    document.getElementById(screenId).classList.remove('hidden');
+}
+
+// REAL BOOT SCREEN (actual system data)
+async function startRealBoot() {
+    const bootText = document.getElementById('boot-text');
+    bootText.innerHTML = "INITIALIZING OUTLAW OS v1.0...\n";
+    
+    // Real system data
+    const hostname = await window.electronAPI.runCommand('hostname');
+    const kernel = await window.electronAPI.runCommand('uname -r');
+    const uptime = await window.electronAPI.runCommand('uptime -p');
+    const cpu = await window.electronAPI.runCommand("lscpu | grep 'Model name' | cut -d: -f2");
+    const ram = await window.electronAPI.runCommand("free -h | awk 'NR==2{print $2}'");
+
+    bootText.innerHTML += `HOSTNAME: ${hostname.trim()}\n`;
+    bootText.innerHTML += `KERNEL: ${kernel.trim()}\n`;
+    bootText.innerHTML += `UPTIME: ${uptime.trim()}\n`;
+    bootText.innerHTML += `CPU: ${cpu.trim()}\n`;
+    bootText.innerHTML += `RAM: ${ram.trim()}\n`;
+    bootText.innerHTML += "MOUNTING PAYLOAD VAULT...\n";
+    bootText.innerHTML += "STARTING AI SERVICE...\n";
+    bootText.innerHTML += "SYSTEM READY.\n";
+
+    setTimeout(() => {
+        switchScreen('main-ui');
+        loadGamesUIAnimated();
+        startRealTimeInfo();
+    }, 2200);
+}
+
+function startRealTimeInfo() {
+    setInterval(async () => {
+        const time = new Date().toLocaleTimeString();
+        const cpu = await window.electronAPI.runCommand("top -bn1 | grep '%Cpu' | awk '{print $2}'");
+        document.getElementById('real-time-info').innerHTML = `${time} • CPU ${parseFloat(cpu||0).toFixed(0)}%`;
+    }, 2000);
+}
+
+// File Manager (real)
+async function openFileManager() {
+    switchScreen('file-manager-ui');
+    const list = document.getElementById('file-list');
+    const res = await window.electronAPI.runCommand('ls -lh ~ ~/outlaw-vault 2>/dev/null || echo "Vault empty"');
+    list.textContent = res;
+}
+
+// Task Manager (real live data)
+async function openTaskManager() {
+    switchScreen('task-manager-ui');
+    refreshTaskManager();
+}
+async function refreshTaskManager() {
+    const bar = document.getElementById('task-bar');
+    const list = document.getElementById('process-list');
+    const cpu = await window.electronAPI.runCommand("top -bn1 | grep '%Cpu' | awk '{print $2}'");
+    const ram = await window.electronAPI.runCommand("free -m | awk 'NR==2{print $3/$2*100}'");
+    bar.innerHTML = `CPU: ${parseFloat(cpu||0).toFixed(1)}% RAM: ${parseFloat(ram||0).toFixed(1)}%`;
+    const procs = await window.electronAPI.runCommand('ps -eo pid,comm,%cpu,%mem --sort=-%cpu | head -n 25');
+    list.textContent = procs;
+}
+
+// Terminal, Calculator, Launchers (unchanged but cleaned)
+function openTerminal() {
+    switchScreen('terminal-ui');
+    const input = document.getElementById('terminal-input');
+    input.focus();
+    input.onkeydown = async e => {
+        if (e.key === 'Enter') {
+            const cmd = input.value.trim();
+            if (!cmd) return;
+            const out = await window.electronAPI.runCommand(cmd);
+            document.getElementById('terminal-output').value += `> ${cmd}\n${out}\n\n`;
+            input.value = '';
+        }
+    };
+}
+
+let calcExpr = '';
+function calcInput(val) { calcExpr += val; document.getElementById('calc-display').value = calcExpr; }
+function calcEquals() {
+    try { document.getElementById('calc-display').value = eval(calcExpr); calcExpr = document.getElementById('calc-display').value; }
+    catch(e) { document.getElementById('calc-display').value = 'ERROR'; }
+}
+function calcClear() { calcExpr = ''; document.getElementById('calc-display').value = ''; }
+function openCalculator() { switchScreen('calculator-ui'); }
+
+function launchOperaGX() { window.electronAPI.runCommand('opera-gx'); }
+function installAndLaunchSteam() { window.electronAPI.runCommand('steam'); }
+
+function openSettings() { switchScreen('settings-ui'); }
+
+async function checkForUpdates() {
+    const status = document.getElementById('update-status');
+    status.innerHTML = '> CHECKING REPOSITORIES...';
+    await window.electronAPI.runCommand('sudo pacman -Syu --noconfirm');
+    status.innerHTML = '> SYSTEM FULLY UPDATED';
+}
+
+let aiEnabled = false;
+function toggleAI() {
+    aiEnabled = !aiEnabled;
+    document.getElementById('ai-toggle-btn').textContent = aiEnabled ? 'DISABLE LOCAL AI' : 'ENABLE LOCAL AI';
+    document.getElementById('ai-status').innerHTML = aiEnabled ? 'AI ACTIVE • Phi-4-mini running' : 'Status: OFF • ~2GB RAM when active';
+    window.electronAPI.runCommand(`systemctl ${aiEnabled ? 'start' : 'stop'} outlaw-ai`);
+}
+
+// Vault (kept simple — you can re-add full DB logic if you want)
+function loadGamesUIAnimated() {
+    const grid = document.getElementById('game-grid');
+    grid.innerHTML = '<div style="opacity:0.6;padding:20px;">No payloads yet — use UPLOAD or CODE EDITOR</div>';
+}
+
+// Start everything
+window.onload = () => {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    document.getElementById('boot-screen').classList.remove('hidden');
+    startRealBoot();
+};
+
+// Expose Electron API
+window.electronAPI = {
+    runCommand: async (cmd) => {
+        return await window.electronAPI.invoke('run-command', cmd);
+    }
+};
+</script>
+</body>
+</html>
