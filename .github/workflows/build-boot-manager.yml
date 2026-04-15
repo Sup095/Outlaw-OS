@@ -1,0 +1,57 @@
+name: Build Outlaw Boot Manager v1.0
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build ISO inside Arch
+        uses: docker://archlinux:latest
+        with:
+          entrypoint: /bin/bash
+          args: -c "
+            pacman -Syu --noconfirm &&
+            pacman -S --noconfirm archiso git base-devel &&
+            cd /github/workspace/outlaw-installer &&
+            chmod +x build.sh &&
+            ./build.sh
+          "
+
+      - name: Find ISO
+        id: find
+        run: |
+          ISO=$(find ./outlaw-installer/out -name "*.iso" | head -n1)
+          echo "iso_path=$ISO" >> $GITHUB_ENV
+          echo "iso_name=$(basename $ISO)" >> $GITHUB_ENV
+
+      - name: Create SHA256
+        run: sha256sum "$ISO_PATH" > "${ISO_PATH}.sha256"
+
+      - name: Upload ISO
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.iso_path }}
+          asset_name: ${{ env.iso_name }}
+          asset_content_type: application/x-iso9660-image
+
+      - name: Upload SHA256
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ env.iso_path }}.sha256
+          asset_name: ${{ env.iso_name }}.sha256
+          asset_content_type: text/plain
