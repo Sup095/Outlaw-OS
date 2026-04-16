@@ -7,3 +7,4 @@ mkdir -p /usr/share/outlaw-os
 cp -r /outlaw-shell/* /usr/share/outlaw-os/
 echo "operator ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 echo "outlaw-os" > /etc/hostname
+exit 0
