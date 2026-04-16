@@ -6,15 +6,25 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04          # Uses Node.js 24 by default
+    # ubuntu-24.04 is the correct choice for the latest environment
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
 
     steps:
       - name: Checkout repository
+        # Updated to v4 (latest stable)
         uses: actions/checkout@v4
 
+      - name: Setup Node.js 24
+        # Explicitly setting Node 24 ensures the runner context 
+        # prioritizes this version for local scripts
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
       - name: Build Outlaw Boot Manager ISO
+        # Using the Arch Linux container to run mkarchiso
         uses: docker://archlinux:latest
         with:
           entrypoint: /bin/bash
@@ -36,15 +46,19 @@ jobs:
             echo "❌ ERROR: ISO was not created!"
             exit 1
           fi
+          # Setting environment variables for subsequent steps
           echo "iso_path=$ISO_PATH" >> $GITHUB_ENV
           echo "iso_name=$(basename $ISO_PATH)" >> $GITHUB_ENV
 
       - name: Generate SHA256 checksum
         run: |
-          cd "$(dirname ${{ env.iso_path }})"
-          sha256sum ${{ env.iso_name }} > ${{ env.iso_name }}.sha256
+          # Use shell expansion to get the directory safely
+          ISO_DIR=$(dirname "${{ env.iso_path }}")
+          cd "$ISO_DIR"
+          sha256sum "${{ env.iso_name }}" > "${{ env.iso_name }}.sha256"
 
       - name: Upload ISO and SHA256 to Release
+        # softprops/action-gh-release@v2 is already Node 20+ compatible
         uses: softprops/action-gh-release@v2
         with:
           files: |
