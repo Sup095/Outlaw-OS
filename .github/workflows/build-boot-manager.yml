@@ -6,7 +6,7 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04   # Use newer runner that defaults to Node 24
     permissions:
       contents: write
 
@@ -32,7 +32,7 @@ jobs:
         run: |
           ISO_PATH=$(find ./outlaw-installer/out -name "outlaw-boot-manager-v1.0.iso" | head -n 1)
           if [ -z "$ISO_PATH" ]; then
-            echo "❌ No ISO found after build!"
+            echo "❌ No ISO found!"
             exit 1
           fi
           echo "iso_path=$ISO_PATH" >> $GITHUB_ENV
@@ -44,7 +44,7 @@ jobs:
           sha256sum ${{ env.iso_name }} > ${{ env.iso_name }}.sha256
           echo "✅ SHA256 checksum generated"
 
-      - name: Upload ISO + SHA256 to Release
+      - name: Upload ISO and SHA256 to Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
@@ -54,4 +54,4 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build Status
-        run: echo "✅ Outlaw Boot Manager v1.0 ISO successfully built and attached to release!"
+        run: echo "✅ Outlaw Boot Manager v1.0 ISO built and attached successfully!"
