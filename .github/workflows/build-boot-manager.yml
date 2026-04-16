@@ -6,9 +6,12 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-24.04   # Use newer runner that defaults to Node 24
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
+
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true   # This fixes the Node.js 20 deprecation
 
     steps:
       - name: Checkout repository
@@ -20,6 +23,7 @@ jobs:
           entrypoint: /bin/bash
           args: >-
             -c "
+              set -e &&
               pacman -Syu --noconfirm &&
               pacman -S --noconfirm archiso git base-devel &&
               cd /github/workspace/outlaw-installer &&
@@ -30,9 +34,9 @@ jobs:
       - name: Locate built ISO
         id: locate
         run: |
-          ISO_PATH=$(find ./outlaw-installer/out -name "outlaw-boot-manager-v1.0.iso" | head -n 1)
+          ISO_PATH=$(find ./outlaw-installer/out -name "outlaw-boot-manager-v1.0.iso" -type f | head -n 1)
           if [ -z "$ISO_PATH" ]; then
-            echo "❌ No ISO found!"
+            echo "❌ ERROR: ISO was not created!"
             exit 1
           fi
           echo "iso_path=$ISO_PATH" >> $GITHUB_ENV
@@ -42,7 +46,6 @@ jobs:
         run: |
           cd "$(dirname ${{ env.iso_path }})"
           sha256sum ${{ env.iso_name }} > ${{ env.iso_name }}.sha256
-          echo "✅ SHA256 checksum generated"
 
       - name: Upload ISO and SHA256 to Release
         uses: softprops/action-gh-release@v2
@@ -53,5 +56,5 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build Status
-        run: echo "✅ Outlaw Boot Manager v1.0 ISO built and attached successfully!"
+      - name: Final Status
+        run: echo "✅ Outlaw Boot Manager v1.0 ISO successfully built and attached!"
