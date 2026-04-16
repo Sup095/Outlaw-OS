@@ -11,32 +11,39 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build ISO inside Arch
+      - name: Build Outlaw Boot Manager ISO
         uses: docker://archlinux:latest
         with:
           entrypoint: /bin/bash
-          args: -c "
-            pacman -Syu --noconfirm &&
-            pacman -S --noconfirm archiso git base-devel &&
-            cd /github/workspace/outlaw-installer &&
-            chmod +x build.sh &&
-            ./build.sh
-          "
+          args: >-
+            -c "
+              pacman -Syu --noconfirm &&
+              pacman -S --noconfirm archiso git base-devel &&
+              cd /github/workspace/outlaw-installer &&
+              chmod +x build.sh &&
+              ./build.sh
+            "
 
-      - name: Find ISO
-        id: find
+      - name: Locate built ISO
+        id: locate
         run: |
-          ISO=$(find ./outlaw-installer/out -name "*.iso" | head -n1)
-          echo "iso_path=$ISO" >> $GITHUB_ENV
-          echo "iso_name=$(basename $ISO)" >> $GITHUB_ENV
+          ISO_PATH=$(find ./outlaw-installer/out -name "outlaw-boot-manager-v1.0.iso" | head -n 1)
+          if [ -z "$ISO_PATH" ]; then
+            echo "❌ No ISO found!"
+            exit 1
+          fi
+          echo "iso_path=$ISO_PATH" >> $GITHUB_ENV
+          echo "iso_name=$(basename $ISO_PATH)" >> $GITHUB_ENV
 
-      - name: Create SHA256
-        run: sha256sum "$ISO_PATH" > "${ISO_PATH}.sha256"
+      - name: Generate SHA256 checksum
+        run: |
+          cd "$(dirname ${{ env.iso_path }})"
+          sha256sum ${{ env.iso_name }} > ${{ env.iso_name }}.sha256
 
-      - name: Upload ISO
+      - name: Upload ISO to Release
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,7 +53,7 @@ jobs:
           asset_name: ${{ env.iso_name }}
           asset_content_type: application/x-iso9660-image
 
-      - name: Upload SHA256
+      - name: Upload SHA256 checksum
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -55,3 +62,6 @@ jobs:
           asset_path: ${{ env.iso_path }}.sha256
           asset_name: ${{ env.iso_name }}.sha256
           asset_content_type: text/plain
+
+      - name: Build Status
+        run: echo "✅ Outlaw Boot Manager v1.0 ISO built and attached successfully!"
