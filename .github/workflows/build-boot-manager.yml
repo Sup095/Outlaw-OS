@@ -32,7 +32,7 @@ jobs:
         run: |
           ISO_PATH=$(find ./outlaw-installer/out -name "outlaw-boot-manager-v1.0.iso" | head -n 1)
           if [ -z "$ISO_PATH" ]; then
-            echo "❌ No ISO found!"
+            echo "❌ No ISO found after build!"
             exit 1
           fi
           echo "iso_path=$ISO_PATH" >> $GITHUB_ENV
@@ -42,26 +42,16 @@ jobs:
         run: |
           cd "$(dirname ${{ env.iso_path }})"
           sha256sum ${{ env.iso_name }} > ${{ env.iso_name }}.sha256
+          echo "✅ SHA256 checksum generated"
 
-      - name: Upload ISO to Release
-        uses: actions/upload-release-asset@v1
+      - name: Upload ISO + SHA256 to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ${{ env.iso_path }}
+            ${{ env.iso_path }}.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ env.iso_path }}
-          asset_name: ${{ env.iso_name }}
-          asset_content_type: application/x-iso9660-image
-
-      - name: Upload SHA256 checksum
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ env.iso_path }}.sha256
-          asset_name: ${{ env.iso_name }}.sha256
-          asset_content_type: text/plain
 
       - name: Build Status
-        run: echo "✅ Outlaw Boot Manager v1.0 ISO built and attached successfully!"
+        run: echo "✅ Outlaw Boot Manager v1.0 ISO successfully built and attached to release!"
