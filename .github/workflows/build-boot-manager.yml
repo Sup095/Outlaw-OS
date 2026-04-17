@@ -1,13 +1,9 @@
+yaml name=.github/workflows/build-boot-manager.yml url=https://github.com/Sup095/Outlaw-OS/blob/main/.github/workflows/build-boot-manager.yml
 name: Build Outlaw Boot Manager v1.0
 
 on:
   release:
     types: [created]
-
-# Explicitly force all GitHub-maintained and third-party actions 
-# to run on Node.js 24 to clear the deprecation warnings.
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -18,6 +14,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
 
       - name: Build Outlaw Boot Manager ISO
         uses: docker://archlinux:latest
