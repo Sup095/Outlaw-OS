@@ -1,4 +1,3 @@
-yaml name=.github/workflows/build-boot-manager.yml url=https://github.com/Sup095/Outlaw-OS/blob/main/.github/workflows/build-boot-manager.yml
 name: Build Outlaw Boot Manager v1.0
 
 on:
